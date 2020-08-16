@@ -63,13 +63,16 @@ namespace simulator_objects
 	XPLMDataRef sun_pitch_dataref;
 	XPLMDataRef sun_heading_dataref;
 
+	
 	XPLMDataRef sun_tint_red_dataref;
 	XPLMDataRef sun_tint_green_dataref;
 	XPLMDataRef sun_tint_blue_dataref;
 
 	XPLMDataRef sun_gain_dataref;
 
-	XPLMDataRef ambient_tint_dataref;
+	XPLMDataRef ambient_tint_red_dataref;
+	XPLMDataRef ambient_tint_green_dataref;
+	XPLMDataRef ambient_tint_blue_dataref;
 	XPLMDataRef ambient_gain_dataref;
 
 	XPLMDataRef forward_mie_scattering_dataref;
@@ -152,7 +155,7 @@ namespace simulator_objects
 		viewport_dataref = XPLMFindDataRef("sim/graphics/view/viewport");
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
-		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.5);
+		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.7);
 		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
@@ -215,22 +218,22 @@ namespace simulator_objects
 		sun_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_pitch_degrees");
 		sun_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_heading_degrees");
 
-		sun_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
-		sun_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
-		sun_tint_blue_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_b");
+
 
 		sun_gain_dataref = export_float_dataref("enhanced_cloudscapes/sun_gain", 3.25f);
+		ambient_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
+		ambient_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
+		ambient_tint_blue_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_b");
 
-		ambient_tint_dataref = export_vec3_dataref("enhanced_cloudscapes/ambient_tint", glm::vec3(1.0, 1.0, 1.0));
-		ambient_gain_dataref = export_float_dataref("enhanced_cloudscapes/ambient_gain", 1.5f);
+		ambient_gain_dataref = export_float_dataref("enhanced_cloudscapes/ambient_gain", 0.8f);
 
 		forward_mie_scattering_dataref = export_float_dataref("enhanced_cloudscapes/forward_mie_scattering", 0.85f);
-		backward_mie_scattering_dataref = export_float_dataref("enhanced_cloudscapes/backward_mie_scattering", 0.25f);
+		backward_mie_scattering_dataref = export_float_dataref("enhanced_cloudscapes/backward_mie_scattering", 0.45f);
 
 		atmosphere_bottom_tint_dataref = export_vec3_dataref("enhanced_cloudscapes/atmosphere_bottom_tint", glm::vec3(0.55f, 0.775f, 1.0f));
 		atmosphere_top_tint_dataref = export_vec3_dataref("enhanced_cloudscapes/atmosphere_top_tint", glm::vec3(0.45f, 0.675f, 1.0f));
 
-		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.675f);
+		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.65f);
 	}
 
 	void update()
@@ -258,9 +261,11 @@ namespace simulator_objects
 		previous_rendering_resolution = current_rendering_resolution;
 		current_rendering_resolution = glm::ivec2(screen_width * rendering_resolution_ratio, screen_height * rendering_resolution_ratio);
 
-		skip_fragments = XPLMGetDatai(skip_fragments_dataref);
-		if ((eye_index == 1) || (eye_index == 4)) frame_index++;
+		
+		if ((eye_index == 3) || (eye_index == 4)) skip_fragments = 0;
+		else skip_fragments = XPLMGetDatai(skip_fragments_dataref);
 
+		frame_index++;
 		reverse_z = XPLMGetDatai(reverse_z_dataref);
 
 		if (reverse_z == 0)
@@ -359,7 +364,7 @@ namespace simulator_objects
 		sun_tint = glm::clamp(glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref)) * 1.25f, 0.0f, 1.0f);
 		sun_gain = XPLMGetDataf(sun_gain_dataref);
 
-		XPLMGetDatavf(ambient_tint_dataref, glm::value_ptr(ambient_tint), 0, ambient_tint.length());
+		ambient_tint = glm::vec3(XPLMGetDataf(ambient_tint_red_dataref), XPLMGetDataf(ambient_tint_green_dataref), XPLMGetDataf(ambient_tint_blue_dataref));
 		ambient_gain = XPLMGetDataf(ambient_gain_dataref);
 
 		backward_mie_scattering = XPLMGetDataf(backward_mie_scattering_dataref);
