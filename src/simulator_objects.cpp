@@ -9,11 +9,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <XPLMDisplay.h>
-
+#include <chrono>
 #define WIND_LAYER_COUNT 3
 
 #define MPS_PER_KNOTS 0.514444444f
-
+auto startT= std::chrono::high_resolution_clock::now();
 namespace simulator_objects
 {
 	XPLMDataRef viewport_dataref;
@@ -34,14 +34,19 @@ namespace simulator_objects
 
 	XPLMDataRef blue_noise_scale_dataref;
 
-	XPLMDataRef cloud_type_datarefs[CLOUD_LAYER_COUNT];
+	//XPLMDataRef cloud_type_datarefs[CLOUD_LAYER_COUNT];
 
-	XPLMDataRef cloud_base_datarefs[CLOUD_LAYER_COUNT];
-	XPLMDataRef cloud_top_datarefs[CLOUD_TYPE_COUNT];
+	//XPLMDataRef cloud_base_datarefs[CLOUD_LAYER_COUNT];
+	//XPLMDataRef cloud_top_datarefs[CLOUD_TYPE_COUNT];
 
-	XPLMDataRef cloud_coverage_datarefs[CLOUD_TYPE_COUNT];
-	XPLMDataRef cloud_density_datarefs[CLOUD_TYPE_COUNT];
-
+	//XPLMDataRef cloud_coverage_datarefs[CLOUD_LAYER_COUNT];
+	//XPLMDataRef cloud_density_datarefs[CLOUD_LAYER_COUNT];
+	//XPLMDataRef cloud_base_datarefs[CLOUD_LAYER_COUNT];
+	XPLMDataRef lua_cloud_base_datarefs;
+	XPLMDataRef lua_cloud_top_datarefs;
+	XPLMDataRef lua_cloud_type_datarefs;
+	XPLMDataRef lua_cloud_coverage_datarefs;
+	XPLMDataRef lua_cloud_density_datarefs;
 	XPLMDataRef base_noise_ratio_datarefs[CLOUD_TYPE_COUNT];
 	XPLMDataRef detail_noise_ratio_datarefs[CLOUD_TYPE_COUNT];
 
@@ -148,7 +153,7 @@ namespace simulator_objects
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
 		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.5);
-		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 1);
+		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
 
@@ -162,19 +167,14 @@ namespace simulator_objects
 
 		blue_noise_scale_dataref = export_float_dataref("enhanced_cloudscapes/blue_noise_scale", 0.01f);
 
-		cloud_type_datarefs[0] = XPLMFindDataRef("sim/weather/cloud_type[0]");
-		cloud_type_datarefs[1] = XPLMFindDataRef("sim/weather/cloud_type[1]");
-		cloud_type_datarefs[2] = XPLMFindDataRef("sim/weather/cloud_type[2]");
+		lua_cloud_type_datarefs = XPLMFindDataRef("enhanced_cloudscapes/weather/cloud_type");
+		lua_cloud_base_datarefs = XPLMFindDataRef("enhanced_cloudscapes/weather/cloud_base_msl_m");
+		lua_cloud_top_datarefs = XPLMFindDataRef("enhanced_cloudscapes/weather/cloud_tops_msl_m");
+		
+		lua_cloud_density_datarefs = XPLMFindDataRef("enhanced_cloudscapes/weather/density");
+		lua_cloud_coverage_datarefs = XPLMFindDataRef("enhanced_cloudscapes/weather/coverage");
 
-		cloud_base_datarefs[0] = XPLMFindDataRef("sim/weather/cloud_base_msl_m[0]");
-		cloud_base_datarefs[1] = XPLMFindDataRef("sim/weather/cloud_base_msl_m[1]");
-		cloud_base_datarefs[2] = XPLMFindDataRef("sim/weather/cloud_base_msl_m[2]");
-
-		cloud_top_datarefs[0] = XPLMFindDataRef("sim/weather/cloud_tops_msl_m[0]");
-		cloud_top_datarefs[1] = XPLMFindDataRef("sim/weather/cloud_tops_msl_m[1]");
-		cloud_top_datarefs[2] = XPLMFindDataRef("sim/weather/cloud_tops_msl_m[2]");
-
-		cloud_coverage_datarefs[0] = export_float_dataref("enhanced_cloudscapes/cirrus/coverage", 1.0f);
+		/*cloud_coverage_datarefs[0] = export_float_dataref("enhanced_cloudscapes/cirrus/coverage", 1.0f);
 		cloud_coverage_datarefs[1] = export_float_dataref("enhanced_cloudscapes/scattered/coverage", 0.75f);
 		cloud_coverage_datarefs[2] = export_float_dataref("enhanced_cloudscapes/broken/coverage", 0.85f);
 		cloud_coverage_datarefs[3] = export_float_dataref("enhanced_cloudscapes/overcast/coverage", 0.95f);
@@ -184,7 +184,7 @@ namespace simulator_objects
 		cloud_density_datarefs[1] = export_float_dataref("enhanced_cloudscapes/scattered/density_multiplier", 0.0035);
 		cloud_density_datarefs[2] = export_float_dataref("enhanced_cloudscapes/broken/density_multiplier", 0.004);
 		cloud_density_datarefs[3] = export_float_dataref("enhanced_cloudscapes/overcast/density_multiplier", 0.004);
-		cloud_density_datarefs[4] = export_float_dataref("enhanced_cloudscapes/stratus/density_multiplier", 0.0045);
+		cloud_density_datarefs[4] = export_float_dataref("enhanced_cloudscapes/stratus/density_multiplier", 0.0045);*/
 
 		base_noise_ratio_datarefs[0] = export_vec3_dataref("enhanced_cloudscapes/cirrus/base_noise_ratios", glm::vec3(0.625f, 0.25f, 0.125f));
 		base_noise_ratio_datarefs[1] = export_vec3_dataref("enhanced_cloudscapes/scattered/base_noise_ratios", glm::vec3(0.625f, 0.25f, 0.125f));
@@ -290,9 +290,13 @@ namespace simulator_objects
 
 		blue_noise_scale = XPLMGetDataf(blue_noise_scale_dataref);
 		
-		for (int layer_index = 0; layer_index < CLOUD_LAYER_COUNT; layer_index++) cloud_types[layer_index] = XPLMGetDatai(cloud_type_datarefs[layer_index]);
-
-		for (int layer_index = 0; layer_index < CLOUD_LAYER_COUNT; layer_index++)
+		//for (int layer_index = 0; layer_index < CLOUD_LAYER_COUNT; layer_index++) cloud_types[layer_index] = XPLMGetDatai(cloud_type_datarefs[layer_index]);
+		XPLMGetDatavi(lua_cloud_type_datarefs,cloud_types,0,3);
+		XPLMGetDatavf(lua_cloud_base_datarefs,cloud_bases,0,3);
+		XPLMGetDatavf(lua_cloud_top_datarefs,cloud_tops,0,3);
+		XPLMGetDatavf(lua_cloud_coverage_datarefs,cloud_coverages,0,3);
+		XPLMGetDatavf(lua_cloud_density_datarefs,cloud_densities,0,3);
+		/*for (int layer_index = 0; layer_index < CLOUD_LAYER_COUNT; layer_index++)
 		{
 			cloud_bases[layer_index] = XPLMGetDataf(cloud_base_datarefs[layer_index]);
 
@@ -304,11 +308,11 @@ namespace simulator_objects
 			cloud_tops[layer_index] = cloud_bases[layer_index] + new_height;
 		}
 
-		for (int type_index = 0; type_index < CLOUD_TYPE_COUNT; type_index++)
+		for (int type_index = 0; type_index < CLOUD_LAYER_COUNT; type_index++)
 		{
 			cloud_coverages[type_index] = XPLMGetDataf(cloud_coverage_datarefs[type_index]);
 			cloud_densities[type_index] = XPLMGetDataf(cloud_density_datarefs[type_index]);
-		}
+		}*/
 
 		for (int type_index = 0; type_index < CLOUD_TYPE_COUNT; type_index++)
 		{
@@ -328,7 +332,9 @@ namespace simulator_objects
 		}
 
 		previous_zulu_time = current_zulu_time;
-		current_zulu_time = XPLMGetDataf(zulu_time_dataref);
+		auto finish = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> elapsed = (finish - startT);
+		current_zulu_time = elapsed.count()/1000;
 
 		float time_difference = current_zulu_time - previous_zulu_time;
 

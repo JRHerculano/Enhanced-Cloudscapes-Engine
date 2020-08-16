@@ -24,14 +24,14 @@ namespace plugin_objects
 	{
 		depth_texture = create_fullscreen_texture();
 
-		cloud_map_textures[0] = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/cloud_map_1.png", false);
-		cloud_map_textures[1] = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/cloud_map_2.png", false);
-		cloud_map_textures[2] = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/cloud_map_3.png", false);
+		cloud_map_textures[0] = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/cloud_map_1.png", false);
+		cloud_map_textures[1] = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/cloud_map_2.png", false);
+		cloud_map_textures[2] = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/cloud_map_3.png", false);
 
-		base_noise_texture = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/base_noise.png", true);
-		detail_noise_texture = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/detail_noise.png", true);
+		base_noise_texture = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/base_noise.png", true);
+		detail_noise_texture = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/detail_noise.png", true);
 
-		blue_noise_texture = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/blue_noise.png", false);
+		blue_noise_texture = load_png_texture("Resources/plugins/Enhanced_Cloudscapes/textures/blue_noise.png", false);
 
 		rendering_texture = create_fullscreen_texture();
 

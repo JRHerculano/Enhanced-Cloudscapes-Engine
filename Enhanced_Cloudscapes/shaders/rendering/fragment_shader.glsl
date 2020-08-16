@@ -50,8 +50,8 @@ uniform int[CLOUD_LAYER_COUNT] cloud_types;
 uniform float[CLOUD_LAYER_COUNT] cloud_bases;
 uniform float[CLOUD_LAYER_COUNT] cloud_tops;
 
-uniform float[CLOUD_TYPE_COUNT] cloud_coverages;
-uniform float[CLOUD_TYPE_COUNT] cloud_densities;
+uniform float[CLOUD_LAYER_COUNT] cloud_coverages;
+uniform float[CLOUD_LAYER_COUNT] cloud_densities;
 
 uniform vec3[CLOUD_TYPE_COUNT] base_noise_ratios;
 uniform vec3[CLOUD_TYPE_COUNT] detail_noise_ratios;
@@ -111,14 +111,14 @@ float sample_clouds(in vec3 ray_position, in int cloud_layer_index)
 	float height_ratio = get_height_ratio(ray_position, cloud_layer_index);
 	float height_multiplier = min(map(height_ratio, 0.0, 0.125, 0.0, 1.0), map(height_ratio, 0.625 * cloud_map_sample.y, cloud_map_sample.y, 1.0, 0.0));
 
-	float base_erosion = map(base_noise * height_multiplier, 1.0 - max(cloud_map_sample.x, cloud_coverages[cloud_types[cloud_layer_index] - 1]), 1.0, 0.0, 1.0);
+	float base_erosion = map(base_noise * height_multiplier, 1.0 - max(cloud_map_sample.x, cloud_coverages[cloud_layer_index]), 1.0, 0.0, 1.0);
 
 	if (base_erosion > 0.01)
 	{
 		vec3 detail_noise_sample = texture(detail_noise_texture, ray_position * detail_noise_scale).xyz;
 		float detail_noise = dot(detail_noise_sample, detail_noise_ratios[cloud_types[cloud_layer_index] - 1]);
 
-		return map(base_erosion, 0.625 * detail_noise, 1.0, 0.0, 1.0) * cloud_densities[cloud_types[cloud_layer_index] - 1] * (cloud_coverages[cloud_types[cloud_layer_index] - 1] + 1.0) * map(length(ray_position - ray_start_position), fade_start_distance, fade_end_distance, 1.0, 0.0);
+		return map(base_erosion, 0.625 * detail_noise, 1.0, 0.0, 1.0) * cloud_densities[cloud_layer_index] * (cloud_coverages[cloud_layer_index] + 1.0) * map(length(ray_position - ray_start_position), fade_start_distance, fade_end_distance, 1.0, 0.0);
 	}
 	else return 0.0;
 }
@@ -244,16 +244,30 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 			vec3 current_ray_position = ray_start_position + (ray_direction * layer_intersections.x);
 			float current_ray_distance = 0.0;
 
-			float step_size = min(layer_intersections.y / SAMPLE_STEP_COUNT, MAXIMUM_SAMPLE_STEP_SIZE);
+			float step_size = min(layer_intersections.y / SAMPLE_STEP_COUNT, MAXIMUM_SAMPLE_STEP_SIZE)/2;
 
 			float sun_angle_multiplier = map(sun_direction.y, 0.05, -0.125, 1.0, 0.125);
 
 			float sun_dot_angle = dot(ray_direction, sun_direction);
 			float mie_scattering_gain = clamp(mix(henyey_greenstein(sun_dot_angle, forward_mie_scattering), henyey_greenstein(sun_dot_angle, -1.0 * backward_mie_scattering), 0.5), 1.0, 2.5);
-
+			float step_max=2.5;
 			while (current_ray_distance <= layer_intersections.y)
 			{
-				float current_step_size = step_size * map(texture(blue_noise_texture, current_ray_position.xz * blue_noise_scale).x, 0.0, 1.0, 0.75, 1.0) * map(current_ray_distance, 0.0, layer_intersections.y, 1.0, 8.0);
+				//float current_step_size = step_size * map(texture(blue_noise_texture, current_ray_position.xz * blue_noise_scale).x, 0.0, 1.0, 0.75, 1.0) * map(current_ray_distance, 0.0, layer_intersections.y, 1.0, 8.0);
+				
+				//step_max=map(current_ray_distance,0,25000,3,8);
+				if(current_ray_distance>25000){
+				     step_max=8.0;				     
+				  }
+				  else if(current_ray_distance>5000){
+				     step_max=4.0;
+				  }
+				  else if(current_ray_distance>2500){
+				    step_max=3.0;
+				  }
+				  
+				  
+				float current_step_size = step_size * map(texture(blue_noise_texture, current_ray_position.xz * blue_noise_scale).x, 0.0, 1.0, 0.75, 1.0) * map(current_ray_distance, 0.0, layer_intersections.y, 1.0, step_max);
 
 				float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
 

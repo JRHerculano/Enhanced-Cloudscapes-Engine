@@ -1,7 +1,7 @@
 #ifdef IBM
 #include <Windows.h>
 #endif
-
+#include "../XLua/XTLua/src/xluaplugin.h"
 #include <GL/glew.h>
 
 #include <XPLMDataAccess.h>
@@ -43,7 +43,9 @@ PLUGIN_API int XPluginStart(char* plugin_name, char* plugin_signature, char* plu
 	std::strcpy(plugin_name, "Enhanced Cloudscapes");
 	std::strcpy(plugin_signature, "FarukEroglu2048.enhanced_cloudscapes");
 	std::strcpy(plugin_description, "Volumetric Clouds for X-Plane 11");
-
+	XPLMCommandRef	reload_cmd=XPLMCreateCommand("xtlua/reloadvolScripts","Reload volumetric clouds xtlua scripts");
+	XPLMRegisterCommandHandler(reload_cmd, reloadScripts, 1,  (void *)0);
+	XTLuaXPluginStart(NULL);
 	glewInit();
 
 	simulator_objects::initialize();
@@ -62,20 +64,20 @@ PLUGIN_API int XPluginStart(char* plugin_name, char* plugin_signature, char* plu
 
 PLUGIN_API void XPluginStop(void)
 {
-	
+	XTLuaXPluginStop();
 }
 
 PLUGIN_API int XPluginEnable(void)
 {
-	return 1;
+	return XTLuaXPluginEnable();
 }
 
 PLUGIN_API void XPluginDisable(void)
 {
-
+	XTLuaXPluginDisable();
 }
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID sender_plugin, int message_type, void* callback_parameters)
 {
-
+	XTLuaXPluginReceiveMessage(sender_plugin,message_type,callback_parameters);
 }
