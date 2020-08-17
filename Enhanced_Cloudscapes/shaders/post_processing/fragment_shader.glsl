@@ -18,6 +18,7 @@ vec3 tone_mapping(vec3 input_color)
 void main()
 {
 	vec4 rendered_color = texture(rendering_texture, fullscreen_texture_position);
+	//rendered_color.xyz = 1.0 - exp(-1.0 * rendered_color.xyz);
 	rendered_color.xyz = tone_mapping(rendered_color.xyz);
 
 	fragment_color = rendered_color;

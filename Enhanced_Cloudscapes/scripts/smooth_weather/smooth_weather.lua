@@ -41,13 +41,13 @@ cldI_cloud_base_datarefs = {};
 cldI_cloud_tops_datarefs = {};
 cldI_cloud_density_datarefs = {};
 cldI_cloud_coverage_datarefs = {};
-cldI_sun_gain = 2.25;
+cldI_sun_gain = 3.25;
 cldT_cloud_base_datarefs = {};
 --cldT_cloud_type_datarefs = {};
 cldT_cloud_tops_datarefs = {};
 cldT_cloud_density_datarefs = {};
 cldT_cloud_coverage_datarefs = {};
-cldT_sun_gain = 2.25;
+cldT_sun_gain = 3.25;
 function animate_value(current_value, target, min, max, speed)
 
     local fps_factor = math.min(0.001, speed * SIM_PERIOD)
@@ -100,11 +100,11 @@ function newWeather()
       cldT_cloud_tops_datarefs[i]=simDR_cloud_tops_datarefs[i]
 	  cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
 	  
-	  cldT_sun_gain=2.25
+	  cldT_sun_gain=3.25
       elseif cldDR_cloud_type_datarefs[i]>0 then --scattered few and cirrus
         cldT_cloud_tops_datarefs[i]=cldDR_cloud_tops_datarefs[i]+500
 	  cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
-	  cldT_sun_gain=3
+	  cldT_sun_gain=3.25
       else
 	cldI_cloud_base_datarefs[i] = cldDR_cloud_base_datarefs[0]
 	cldI_cloud_tops_datarefs[i] = cldDR_cloud_tops_datarefs[0]

@@ -311,7 +311,7 @@ vec4 render_clouds()
 	float shadow_attenuation = 1.0;
 	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, cloud_layer_index).x * sun_direction), cloud_layer_index);
 	
-	output_color.xyz = mix(output_color.xyz, 0.05 * atmosphere_bottom_tint, output_color.w * (1.0 - shadow_attenuation));
+	//output_color.xyz = mix(output_color.xyz, 0.05 * atmosphere_bottom_tint, output_color.w * (1.0 - shadow_attenuation));
 	output_color.w *= map(shadow_attenuation, 0.0, 1.0, 0.25, 1.0);
 
 	output_color.w = 1.0 - output_color.w;

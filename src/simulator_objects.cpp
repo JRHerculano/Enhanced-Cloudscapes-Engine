@@ -155,7 +155,7 @@ namespace simulator_objects
 		viewport_dataref = XPLMFindDataRef("sim/graphics/view/viewport");
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
-		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.7);
+		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 1.0);
 		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
@@ -360,8 +360,11 @@ namespace simulator_objects
 		float sun_heading = glm::radians(XPLMGetDataf(sun_heading_dataref));
 
 		sun_direction = glm::vec3(glm::cos(sun_pitch) * glm::sin(sun_heading), glm::sin(sun_pitch), -1.0f * glm::cos(sun_pitch) * glm::cos(sun_heading));
-
-		sun_tint = glm::clamp(glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref)) * 1.25f, 0.0f, 1.0f);
+		sun_tint_red_dataref = XPLMFindDataRef("sim/private/stats/skyc/sun_dir_r");
+		sun_tint_green_dataref = XPLMFindDataRef("sim/private/stats/skyc/sun_dir_g");
+		sun_tint_blue_dataref = XPLMFindDataRef("sim/private/stats/skyc/sun_dir_b");
+		sun_tint = glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref));
+		//sun_tint = glm::clamp(glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref)) * 1.25f, 0.0f, 1.0f);
 		sun_gain = XPLMGetDataf(sun_gain_dataref);
 
 		ambient_tint = glm::vec3(XPLMGetDataf(ambient_tint_red_dataref), XPLMGetDataf(ambient_tint_green_dataref), XPLMGetDataf(ambient_tint_blue_dataref));
