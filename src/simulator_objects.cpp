@@ -10,6 +10,7 @@
 
 #include <XPLMDisplay.h>
 #include <chrono>
+#include <stdio.h>
 #define WIND_LAYER_COUNT 3
 
 #define MPS_PER_KNOTS 0.514444444f
@@ -123,7 +124,7 @@ namespace simulator_objects
 	glm::vec3 base_noise_ratios[CLOUD_TYPE_COUNT];
 	glm::vec3 detail_noise_ratios[CLOUD_TYPE_COUNT];
 
-	glm::vec3 wind_offsets[CLOUD_LAYER_COUNT];
+	glm::vec3 wind_offset_vec[CLOUD_LAYER_COUNT];
 
 	float fade_start_distance;
 	float fade_end_distance;
@@ -155,8 +156,8 @@ namespace simulator_objects
 		viewport_dataref = XPLMFindDataRef("sim/graphics/view/viewport");
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
-		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 1.0);
-		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
+		rendering_resolution_ratio_dataref = XPLMFindDataRef("enhanced_cloudscapes/rendering_resolution_ratio");
+		skip_fragments_dataref = XPLMFindDataRef("enhanced_cloudscapes/skip_fragments");
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
 
@@ -339,15 +340,16 @@ namespace simulator_objects
 		previous_zulu_time = current_zulu_time;
 		auto finish = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> elapsed = (finish - startT);
-		current_zulu_time = elapsed.count()/1000;
-
+		current_zulu_time = elapsed.count()/1000.0;
+		
 		float time_difference = current_zulu_time - previous_zulu_time;
 
 		for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++)
 		{
-			for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) wind_offsets[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
-
-			wind_offsets[cloud_layer_index].y += 0.05 * time_difference;
+			for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) 
+			wind_offset_vec[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
+			
+			wind_offset_vec[cloud_layer_index].y += 0.05 * time_difference;
 		}
 
 		XPLMDataRef fade_start_distance_dataref = XPLMFindDataRef("sim/private/stats/skyc/fog/near_fog_cld");

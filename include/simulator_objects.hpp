@@ -47,7 +47,7 @@ namespace simulator_objects
 	extern glm::vec3 base_noise_ratios[CLOUD_TYPE_COUNT];
 	extern glm::vec3 detail_noise_ratios[CLOUD_TYPE_COUNT];
 
-	extern glm::vec3 wind_offsets[CLOUD_LAYER_COUNT];
+	extern glm::vec3 wind_offset_vec[CLOUD_LAYER_COUNT];
 
 	extern float fade_start_distance;
 	extern float fade_end_distance;

@@ -5,7 +5,8 @@ cldDR_cloud_type_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_typ
 cldDR_cloud_tops_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_tops_msl_m")
 cldDR_cloud_density_datarefs = find_dataref("enhanced_cloudscapes/weather/density")
 cldDR_cloud_coverage_datarefs = find_dataref("enhanced_cloudscapes/weather/coverage")
-
+cldDR_cloud_resolution_ratio = find_dataref("enhanced_cloudscapes/rendering_resolution_ratio")
+cldDR_cloud_resolution_ratio =0.5
 simDR_sun_pitch = find_dataref("sim/graphics/scenery/sun_pitch_degrees");
 
 simDR_override_clouds=find_dataref("sim/operation/override/override_clouds")
@@ -96,16 +97,15 @@ function newWeather()
     cldI_sun_gain=cldDR_sun_gain
     
     cldT_cloud_base_datarefs[i]=simDR_cloud_base_datarefs[i]
-    if cldDR_cloud_type_datarefs[i]>1 then 
+    if cldDR_cloud_type_datarefs[i]>1 and simDR_cloud_coverage_datarefs[i]>0 then 
       cldT_cloud_tops_datarefs[i]=simDR_cloud_tops_datarefs[i]
-	  cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
-	  
-	  cldT_sun_gain=3.25
-      elseif cldDR_cloud_type_datarefs[i]>0 then --scattered few and cirrus
+      cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
+      cldT_sun_gain=3.25
+    elseif cldDR_cloud_type_datarefs[i]>0 and simDR_cloud_coverage_datarefs[i]>0  then --scattered few and cirrus
         cldT_cloud_tops_datarefs[i]=cldDR_cloud_tops_datarefs[i]+500
-	  cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
-	  cldT_sun_gain=3.25
-      else
+	cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
+	cldT_sun_gain=3.25
+    else
 	cldI_cloud_base_datarefs[i] = cldDR_cloud_base_datarefs[0]
 	cldI_cloud_tops_datarefs[i] = cldDR_cloud_tops_datarefs[0]
 	cldI_cloud_density_datarefs[i] = cldDR_cloud_density_datarefs[0]
@@ -133,9 +133,9 @@ end
 
 function flight_start()
   simDR_whiteout=1
-  simDR_fog=0.2
-  simDR_dsf_min=500000
-  simDR_dsf_max=200000
+--   simDR_fog=0.2
+--   simDR_dsf_min=500000
+--   simDR_dsf_max=500000
 
   for i = 0, 2, 1 do
     cldT_cloud_tops_datarefs[i]=(simDR_cloud_tops_datarefs[i])
@@ -172,18 +172,18 @@ function after_physics()
   local targetSungain=2.25
 
 
-  
+    local refreshVal
     for i = 0, 2, 1 do
       --print(i .. " " ..cldDR_cloud_base_datarefs[i])
       cldDR_cloud_base_datarefs[i]=interpolate_value(cldI_cloud_base_datarefs[i],cldT_cloud_base_datarefs[i])
       cldDR_cloud_tops_datarefs[i]=interpolate_value(cldI_cloud_tops_datarefs[i],cldT_cloud_tops_datarefs[i])
-      
+      refreshVal=simDR_cloud_coverage_datarefs[i]
       cldDR_cloud_coverage_datarefs[i]=interpolate_value(cldI_cloud_coverage_datarefs[i],cldT_cloud_coverage_datarefs[i])
       cldDR_cloud_density_datarefs[i]=interpolate_value(cldI_cloud_density_datarefs[i],cldT_cloud_density_datarefs[i])  
       --print(i .. " b=" .. cldDR_cloud_base_datarefs[i] .." h=" ..cldDR_cloud_tops_datarefs[i] .. " d="..diff)
       if simDR_cloud_type_datarefs[i] >0 then
 	cldDR_cloud_type_datarefs[i]=simDR_cloud_type_datarefs[i]
-      elseif cldDR_cloud_coverage_datarefs[i]<0.01 then
+      elseif cldDR_cloud_coverage_datarefs[i]==0.0 then
 	cldDR_cloud_type_datarefs[i]=0
       end
     end

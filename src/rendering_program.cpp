@@ -8,7 +8,7 @@
 #include <XPLMGraphics.h>
 
 #include <glm/gtc/type_ptr.hpp>
-
+#include <stdio.h>
 namespace rendering_program
 {
 	GLint reference;
@@ -207,8 +207,9 @@ namespace rendering_program
 		glUniform3fv(base_noise_ratios, CLOUD_TYPE_COUNT, reinterpret_cast<GLfloat*>(simulator_objects::base_noise_ratios));
 		glUniform3fv(detail_noise_ratios, CLOUD_TYPE_COUNT, reinterpret_cast<GLfloat*>(simulator_objects::detail_noise_ratios));
 
-		glUniform3fv(wind_offsets, CLOUD_LAYER_COUNT, reinterpret_cast<GLfloat*>(simulator_objects::wind_offsets));
-
+		glUniform3fv(wind_offsets, CLOUD_LAYER_COUNT, reinterpret_cast<GLfloat*>(simulator_objects::wind_offset_vec));
+		//for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++)
+		//printf("%d %f %f %f \n",cloud_layer_index,simulator_objects::wind_offset_vec[cloud_layer_index][0],simulator_objects::wind_offset_vec[cloud_layer_index][1],simulator_objects::wind_offset_vec[cloud_layer_index][2]);
 		glUniform1f(fade_start_distance, simulator_objects::fade_start_distance);
 		glUniform1f(fade_end_distance, simulator_objects::fade_end_distance);
 
