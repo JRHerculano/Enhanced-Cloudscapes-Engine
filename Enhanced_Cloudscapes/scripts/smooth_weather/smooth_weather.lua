@@ -6,7 +6,8 @@ cldDR_cloud_tops_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_top
 cldDR_cloud_density_datarefs = find_dataref("enhanced_cloudscapes/weather/density")
 cldDR_cloud_coverage_datarefs = find_dataref("enhanced_cloudscapes/weather/coverage")
 cldDR_cloud_resolution_ratio = find_dataref("enhanced_cloudscapes/rendering_resolution_ratio")
-cldDR_cloud_resolution_ratio =0.5
+simDR_gpu_time = find_dataref("sim/time/gpu_time_per_frame_sec_approx");
+
 simDR_sun_pitch = find_dataref("sim/graphics/scenery/sun_pitch_degrees");
 
 simDR_override_clouds=find_dataref("sim/operation/override/override_clouds")
@@ -37,6 +38,7 @@ simDRTime=find_dataref("sim/time/total_running_time_sec")
 simDR_VR=find_dataref("sim/graphics/VR/enabled")
 
 
+
 cldI_cloud_base_datarefs = {};
 --cldI_cloud_type_datarefs = {};
 cldI_cloud_tops_datarefs = {};
@@ -49,13 +51,18 @@ cldT_cloud_tops_datarefs = {};
 cldT_cloud_density_datarefs = {};
 cldT_cloud_coverage_datarefs = {};
 cldT_sun_gain = 3.25;
+
+function deferred_command(name,desc,realFunc)
+	return replace_command(name,realFunc)
+end
+
 function animate_value(current_value, target, min, max, speed)
 
     local fps_factor = math.min(0.001, speed * SIM_PERIOD)
 
     if target >= (max - 0.001) and current_value >= (max - 0.01) then
         return max
-    elseif target <= (min + 0.001) and current_value <= (min + 0.01) then
+    elseif current_value <= (min - 0.01) then
        return min
     else
         return current_value + ((target - current_value) * fps_factor)
@@ -106,10 +113,10 @@ function newWeather()
 	cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
 	cldT_sun_gain=3.25
     else
-	cldI_cloud_base_datarefs[i] = cldDR_cloud_base_datarefs[0]
-	cldI_cloud_tops_datarefs[i] = cldDR_cloud_tops_datarefs[0]
-	cldI_cloud_density_datarefs[i] = cldDR_cloud_density_datarefs[0]
-	cldI_cloud_coverage_datarefs[i] = cldDR_cloud_coverage_datarefs[0]
+	cldT_cloud_base_datarefs[i] = cldDR_cloud_tops_datarefs[i]
+-- 	cldI_cloud_tops_datarefs[i] = cldDR_cloud_tops_datarefs[i]
+-- 	cldI_cloud_density_datarefs[i] = cldDR_cloud_density_datarefs[i]
+-- 	cldI_cloud_coverage_datarefs[i] = cldDR_cloud_coverage_datarefs[i]
 
 	cldT_cloud_coverage_datarefs[i]=0
       end
@@ -119,11 +126,18 @@ function newWeather()
   lastUpdate=simDRTime
   print("New Weather")
 end
+function cldCMD_newWeather_CMDhandler(phase, duration)
+   if phase==0 then
+      newWeather()
+   end
+end
+
+cldCMD_newWeather 				= deferred_command("enhanced_cloudscapes/newWeather", "EC new weather", cldCMD_newWeather_CMDhandler)
 function isNewWeather()
     local retVal=false
     for i = 0, 2, 1 do
-      if cldT_cloud_base_datarefs[i]~=simDR_cloud_base_datarefs[i] then retVal=true end
-      if cldDR_cloud_type_datarefs[i]>1 and cldT_cloud_tops_datarefs[i]~=simDR_cloud_tops_datarefs[i] then retVal=true end
+      if cldT_cloud_base_datarefs[i]~=simDR_cloud_base_datarefs[i]  and (simDR_cloud_coverage_datarefs[i]>0) then retVal=true end
+      if cldDR_cloud_type_datarefs[i]>1 and cldT_cloud_tops_datarefs[i]~=simDR_cloud_tops_datarefs[i] and simDR_cloud_coverage_datarefs[i]>0 then retVal=true end
     end
     
     
@@ -133,9 +147,9 @@ end
 
 function flight_start()
   simDR_whiteout=1
---   simDR_fog=0.2
---   simDR_dsf_min=500000
---   simDR_dsf_max=500000
+   simDR_fog=0.7
+   simDR_dsf_min=100000
+   --simDR_dsf_max=200000
 
   for i = 0, 2, 1 do
     cldT_cloud_tops_datarefs[i]=(simDR_cloud_tops_datarefs[i])
@@ -167,7 +181,13 @@ function after_physics()
   local diff=simDRTime-lastUpdate
   if diff>transitionTimeSecs or isNewWeather()==true then newWeather() end
   
-  
+  if simDR_gpu_time>0.025 then
+    cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,0.5,0.5,1.0,1)
+  elseif simDR_gpu_time<0.010 and cldDR_cloud_resolution_ratio<1.0 then
+    cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,1.0,0.95,1.0,1)
+  elseif simDR_gpu_time<0.020 and cldDR_cloud_resolution_ratio<1.0 then
+    cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,1.0,0.5,1.0,1)
+  end
   
   local targetSungain=2.25
 

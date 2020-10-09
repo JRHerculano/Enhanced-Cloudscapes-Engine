@@ -10,7 +10,7 @@
 
 #include <XPLMDisplay.h>
 #include <chrono>
-#include <stdio.h>
+
 #define WIND_LAYER_COUNT 3
 
 #define MPS_PER_KNOTS 0.514444444f
