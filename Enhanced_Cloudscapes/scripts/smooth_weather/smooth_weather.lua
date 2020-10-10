@@ -37,7 +37,11 @@ simDR_dsf_max = find_dataref("sim/private/controls/skyc/max_dsf_vis_ever")
 simDRTime=find_dataref("sim/time/total_running_time_sec")
 simDR_VR=find_dataref("sim/graphics/VR/enabled")
 
+l_ref=find_dataref("sim/flightmodel/position/lat_ref")
+r_ref=find_dataref("sim/flightmodel/position/lon_ref")
 
+last_l=l_ref
+last_r=r_ref
 
 cldI_cloud_base_datarefs = {};
 --cldI_cloud_type_datarefs = {};
@@ -104,14 +108,18 @@ function newWeather()
     cldI_sun_gain=cldDR_sun_gain
     
     cldT_cloud_base_datarefs[i]=simDR_cloud_base_datarefs[i]
-    if cldDR_cloud_type_datarefs[i]>1 and simDR_cloud_coverage_datarefs[i]>0 then 
+    --if cldDR_cloud_type_datarefs[i]>1 and simDR_cloud_coverage_datarefs[i]>0 then 
+    if simDR_cloud_coverage_datarefs[i]>0 then   
       cldT_cloud_tops_datarefs[i]=simDR_cloud_tops_datarefs[i]
       cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
       cldT_sun_gain=3.25
-    elseif cldDR_cloud_type_datarefs[i]>0 and simDR_cloud_coverage_datarefs[i]>0  then --scattered few and cirrus
+      cldT_cloud_density_datarefs[i]=getDensity(i)
+    --elseif cldDR_cloud_type_datarefs[i]>0 and simDR_cloud_coverage_datarefs[i]>0  then --scattered few and cirrus
+    elseif simDR_cloud_coverage_datarefs[i]>0  then --scattered few and cirrus
         cldT_cloud_tops_datarefs[i]=cldDR_cloud_tops_datarefs[i]+500
 	cldT_cloud_coverage_datarefs[i]=math.min(((simDR_cloud_coverage_datarefs[i]-1) /5),1.0)
 	cldT_sun_gain=3.25
+	cldT_cloud_density_datarefs[i]=getDensity(i)
     else
 	cldT_cloud_base_datarefs[i] = cldDR_cloud_tops_datarefs[i]
 -- 	cldI_cloud_tops_datarefs[i] = cldDR_cloud_tops_datarefs[i]
@@ -120,7 +128,7 @@ function newWeather()
 
 	cldT_cloud_coverage_datarefs[i]=0
       end
-      cldT_cloud_density_datarefs[i]=getDensity(i)
+      
   end
   cldI_sun_gain=cldDR_sun_gain
   lastUpdate=simDRTime
@@ -154,6 +162,7 @@ function flight_start()
   for i = 0, 2, 1 do
     cldT_cloud_tops_datarefs[i]=(simDR_cloud_tops_datarefs[i])
     cldT_cloud_coverage_datarefs[i]=math.min((simDR_cloud_coverage_datarefs[0]-1 /5),1.0)
+    cldT_cloud_density_datarefs[i]=getDensity(i)
   end
   newWeather()
   for i = 0, 2, 1 do
@@ -178,6 +187,15 @@ end
 
 function after_physics()
 
+  if last_l~=l_ref or last_r~=r_ref then
+    print("teleport " .. " " .. last_l .. " " .. last_r.. " " .. l_ref .. " " .. r_ref)
+    last_l=l_ref
+    last_r=r_ref
+    
+  end
+
+
+  
   local diff=simDRTime-lastUpdate
   if diff>transitionTimeSecs or isNewWeather()==true then newWeather() end
   

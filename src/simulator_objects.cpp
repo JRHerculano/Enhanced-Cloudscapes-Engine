@@ -9,10 +9,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <XPLMDisplay.h>
+#include <XPLMGraphics.h>
+#include <stdio.h>
 #include <chrono>
 
 #define WIND_LAYER_COUNT 3
-
+#define RADIANS_PER_DEGREES 0.01745329251994329576
 #define MPS_PER_KNOTS 0.514444444f
 auto startT= std::chrono::high_resolution_clock::now();
 namespace simulator_objects
@@ -144,9 +146,28 @@ namespace simulator_objects
 	glm::vec3 atmosphere_top_tint;
 
 	float atmospheric_blending;
-
+	XPLMDataRef last_l_dataref;
+	XPLMDataRef last_r_dataref;
+	float last_l;
+	float last_r;
+	float offX;
+	float offY;
+	float srcX;
+	float srcY;
 	void initialize()
 	{
+		last_l_dataref=XPLMFindDataRef("sim/flightmodel/position/lat_ref");
+		last_r_dataref=XPLMFindDataRef("sim/flightmodel/position/lon_ref");
+		last_l=XPLMGetDataf(last_l_dataref);
+		last_r=XPLMGetDataf(last_r_dataref);
+		offX=0;
+		offY=0;
+		double outX;
+		double outY;
+		double outZ;
+		XPLMWorldToLocal(last_l,last_r,0,&outX,&outY,&outZ);
+		srcX=outX;
+		srcY=outZ;
 		XPLMDataRef override_clouds_dataref = XPLMFindDataRef("sim/operation/override/override_clouds");
 		XPLMSetDatai(override_clouds_dataref, 1);
 
@@ -236,9 +257,46 @@ namespace simulator_objects
 
 		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.65f);
 	}
+	float windspeeds[WIND_LAYER_COUNT];
+	float windDir[WIND_LAYER_COUNT];
+	float windAlt[WIND_LAYER_COUNT];
+	float getWindSpeed(float altitude){
+		for(int i=0;i<WIND_LAYER_COUNT-1;i++){
+			if(windAlt[i+1]>altitude){
+				float retVal=windspeeds[i]*0.51;
+				if(windspeeds[i+1]>0&&windAlt[i+1]!=windAlt[i])
+					retVal+=(windspeeds[i+1]*0.51-windspeeds[i]*0.51)*
+								((altitude-windAlt[i])/(windAlt[i+1]-windAlt[i]));
+				return retVal;
+			}
+		}
 
+		return windspeeds[WIND_LAYER_COUNT-1]*0.51;
+	}
+	float getWindDir(float altitude){
+		for(int i=0;i<WIND_LAYER_COUNT-1;i++){
+			if(windAlt[i+1]>altitude)
+				return windDir[i];
+		}
+		return windDir[WIND_LAYER_COUNT-1];
+	}
 	void update()
 	{
+		if (last_l!=XPLMGetDataf(last_l_dataref)||last_r!=XPLMGetDataf(last_r_dataref)){
+			double outX;
+			double outY;
+			double outZ;
+			XPLMWorldToLocal(last_l,last_r,0,&outX,&outY,&outZ);
+			offX-=(outX-srcX);
+			offY-=(outZ-srcY);
+			//printf("c teleport %f %f %f %f\n",outX,outY,offX,offY);
+			last_l=XPLMGetDataf(last_l_dataref);
+			last_r=XPLMGetDataf(last_r_dataref);
+			XPLMWorldToLocal(last_l,last_r,0,&outX,&outY,&outZ);
+			srcX=outX;
+			srcY=outZ;
+			//printf("c teleport %f %f %f %f\n",outX,outY,offX,offY);
+		}
 		XPLMDataRef fog_clip_scale_dataref = XPLMFindDataRef("sim/private/controls/terrain/fog_clip_scale");
 		XPLMSetDataf(fog_clip_scale_dataref, -100.0);
 
@@ -329,12 +387,17 @@ namespace simulator_objects
 		float wind_altitudes[WIND_LAYER_COUNT];
 		glm::vec3 wind_vectors[WIND_LAYER_COUNT];
 
-		for (int layer_index = 0; layer_index < WIND_LAYER_COUNT; layer_index++)
+		/*for (int layer_index = 0; layer_index < WIND_LAYER_COUNT; layer_index++)
 		{
 			wind_altitudes[layer_index] = XPLMGetDataf(wind_altitude_datarefs[layer_index]);
 
 			float wind_heading = glm::radians(XPLMGetDataf(wind_direction_datarefs[layer_index]));
 			wind_vectors[layer_index] = glm::vec3(glm::sin(wind_heading), 0.0f, -1.0f * glm::cos(wind_heading)) * XPLMGetDataf(wind_speed_datarefs[layer_index]) * MPS_PER_KNOTS;
+		}*/
+		for(int i=0;i<WIND_LAYER_COUNT;i++){
+			windspeeds[i]=XPLMGetDataf(wind_speed_datarefs[i]);
+			windDir[i]=XPLMGetDataf(wind_direction_datarefs[i]);
+			windAlt[i]=XPLMGetDataf(wind_altitude_datarefs[i]);
 		}
 
 		previous_zulu_time = current_zulu_time;
@@ -346,12 +409,22 @@ namespace simulator_objects
 
 		for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++)
 		{
-			for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) 
-			wind_offset_vec[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
+			//for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) 
+			//wind_offset_vec[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
+			//wind_offset_vec[cloud_layer_index].x += (offX);
+			//wind_offset_vec[cloud_layer_index].y += 0.05 * time_difference;
+			//wind_offset_vec[cloud_layer_index].z += (offY);
+			float speed=getWindSpeed(cloud_bases[cloud_layer_index]);
+			float dir=getWindDir(cloud_bases[cloud_layer_index]);
+			wind_offset_vec[cloud_layer_index].x+=(speed*sin(RADIANS_PER_DEGREES*dir)*time_difference)+offX;
+			wind_offset_vec[cloud_layer_index].y+=speed*0.25f*time_difference;
+			wind_offset_vec[cloud_layer_index].z+=(-1.0f*speed*cos(RADIANS_PER_DEGREES*dir)*time_difference)+offY;
+			//printf("%d %f %f %f (%f %f)\n",cloud_layer_index,wind_offset_vec[cloud_layer_index].x,wind_offset_vec[cloud_layer_index].y,wind_offset_vec[cloud_layer_index].z,speed , dir);
 			
-			wind_offset_vec[cloud_layer_index].y += 0.05 * time_difference;
+			//printf("%i %f %f\n",cloud_layer_index,wind_offset_vec[cloud_layer_index].x,wind_offset_vec[cloud_layer_index].z);
 		}
-
+		offX=0;
+		offY=0;
 		XPLMDataRef fade_start_distance_dataref = XPLMFindDataRef("sim/private/stats/skyc/fog/near_fog_cld");
 		XPLMDataRef fade_end_distance_dataref = XPLMFindDataRef("sim/private/stats/skyc/fog/far_fog_cld");
 

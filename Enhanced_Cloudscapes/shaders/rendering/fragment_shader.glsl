@@ -269,7 +269,7 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 				     step_min=2.0;
 				     step_max=8.0;
 				     
-				     //local_blue_noise_scale=blue_noise_scale;
+				     local_blue_noise_scale=blue_noise_scale;
 				     
 				  }
 				  /*else if(current_ray_distance>25000){
