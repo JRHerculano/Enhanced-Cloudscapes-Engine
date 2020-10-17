@@ -1,5 +1,9 @@
 #include <dataref_helpers.hpp>
 
+std::unordered_map<std::string, glm::vec3*> vector_float_dataRefs;
+std::unordered_map<std::string, float*> float_dataRefs;
+std::unordered_map<std::string, int*> int_dataRefs;
+#define MSG_ADD_DATAREF 0x01000000           //  Add dataref to DRE message
 int read_int_callback(void* float_pointer)
 {
 	return *static_cast<int*>(float_pointer);
@@ -49,26 +53,46 @@ void write_vec3_callback(void* vector_pointer, float* input_values, int write_of
 	if (write_end < write_start) write_end = write_start;
 	else if (write_end > output_vec3.length()) write_end = output_vec3.length();
 
-	for (int index = write_start; index < write_end; index++) output_vec3[index] = input_values[index];
+	for (int index = write_start; index < write_end; index++) {
+		//printf("%d %f becomes %f\n",index,output_vec3[index],input_values[index-write_start]);
+		output_vec3[index] = input_values[index-write_start];
+	}
+
 }
 
 XPLMDataRef export_int_dataref(char* dataref_name, int initial_value)
 {
 	int* int_pointer = new int(initial_value);
-
+	int_dataRefs[std::string(dataref_name)]=int_pointer;
 	return XPLMRegisterDataAccessor(dataref_name, xplmType_Int, 1, read_int_callback, write_int_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, int_pointer, int_pointer);
 }
 
 XPLMDataRef export_float_dataref(char* dataref_name, float initial_value)
 {
 	float* float_pointer = new float(initial_value);
-
+	float_dataRefs[std::string(dataref_name)]=float_pointer;
 	return XPLMRegisterDataAccessor(dataref_name, xplmType_Float, 1, nullptr, nullptr, read_float_callback, write_float_callback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, float_pointer, float_pointer);
 }
 
 XPLMDataRef export_vec3_dataref(char* dataref_name, glm::vec3 initial_value)
 {
 	glm::vec3* vec3_pointer = new glm::vec3(initial_value);
-
+	vector_float_dataRefs[std::string(dataref_name)]=vec3_pointer;
 	return XPLMRegisterDataAccessor(dataref_name, xplmType_FloatArray, 1, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, read_vec3_callback, write_vec3_callback, nullptr, nullptr, vec3_pointer, vec3_pointer);
+}
+
+void notify_datarefs()
+{
+	for (auto x : vector_float_dataRefs) {
+        std::string name=x.first;
+		XPLMSendMessageToPlugin(XPLM_NO_PLUGIN_ID , MSG_ADD_DATAREF, (void*)name.c_str());  //tell dref editor about it
+	}
+	for (auto x : float_dataRefs) {
+        std::string name=x.first;
+		XPLMSendMessageToPlugin(XPLM_NO_PLUGIN_ID , MSG_ADD_DATAREF, (void*)name.c_str());  //tell dref editor about it
+	}
+	for (auto x : int_dataRefs) {
+        std::string name=x.first;
+		XPLMSendMessageToPlugin(XPLM_NO_PLUGIN_ID , MSG_ADD_DATAREF, (void*)name.c_str());  //tell dref editor about it
+	}
 }

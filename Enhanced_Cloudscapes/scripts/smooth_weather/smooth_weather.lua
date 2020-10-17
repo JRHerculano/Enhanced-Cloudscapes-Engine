@@ -1,5 +1,8 @@
 local transitionTimeSecs=30
 local cloudheightMod=2
+
+
+
 cldDR_cloud_base_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_base_msl_m")
 cldDR_cloud_type_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_type")
 cldDR_cloud_tops_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_tops_msl_m")
@@ -151,9 +154,11 @@ function isNewWeather()
     
     return retVal
 end
+dofile("presetLoader.lua")
 
 
 function flight_start()
+  setDrefs()
   simDR_whiteout=1
    simDR_fog=0.7
    simDR_dsf_min=100000

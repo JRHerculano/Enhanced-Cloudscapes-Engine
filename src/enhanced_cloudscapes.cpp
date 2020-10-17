@@ -6,7 +6,7 @@
 
 #include <XPLMDataAccess.h>
 #include <XPLMDisplay.h>
-
+#include <dataref_helpers.hpp>
 #include <simulator_objects.hpp>
 #include <plugin_objects.hpp>
 
@@ -41,7 +41,7 @@ int draw_callback(XPLMDrawingPhase drawing_phase, int is_before, void* callback_
 PLUGIN_API int XPluginStart(char* plugin_name, char* plugin_signature, char* plugin_description)
 {
 	std::strcpy(plugin_name, "Enhanced Cloudscapes");
-	std::strcpy(plugin_signature, "FarukEroglu2048.enhanced_cloudscapes");
+	std::strcpy(plugin_signature, "mSparks.enhanced_cloudscapes");
 	std::strcpy(plugin_description, "Volumetric Clouds for X-Plane 11");
 	XPLMCommandRef	reload_cmd=XPLMCreateCommand("xtlua/reloadvolScripts","Reload volumetric clouds xtlua scripts");
 	XPLMRegisterCommandHandler(reload_cmd, reloadScripts, 1,  (void *)0);
@@ -79,5 +79,8 @@ PLUGIN_API void XPluginDisable(void)
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID sender_plugin, int message_type, void* callback_parameters)
 {
+	if (message_type == XPLM_MSG_PLANE_LOADED){
+		notify_datarefs();
+	}
 	XTLuaXPluginReceiveMessage(sender_plugin,message_type,callback_parameters);
 }
