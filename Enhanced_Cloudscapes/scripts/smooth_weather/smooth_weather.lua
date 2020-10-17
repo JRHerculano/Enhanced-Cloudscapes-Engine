@@ -43,6 +43,12 @@ simDR_VR=find_dataref("sim/graphics/VR/enabled")
 l_ref=find_dataref("sim/flightmodel/position/lat_ref")
 r_ref=find_dataref("sim/flightmodel/position/lon_ref")
 
+simDR_sun_tint_red_dataref = find_dataref("sim/graphics/misc/outside_light_level_r");
+simDR_sun_tint_green_dataref = find_dataref("sim/graphics/misc/outside_light_level_g");
+simDR_sun_tint_blue_dataref = find_dataref("sim/graphics/misc/outside_light_level_b");
+cldDR_sun_tint_red_dataref = find_dataref("enhanced_cloudscapes/outside_light_level_r");
+cldDR_sun_tint_green_dataref = find_dataref("enhanced_cloudscapes/outside_light_level_g");
+cldDR_sun_tint_blue_dataref = find_dataref("enhanced_cloudscapes/outside_light_level_b");	
 last_l=l_ref
 last_r=r_ref
 
@@ -63,6 +69,17 @@ function deferred_command(name,desc,realFunc)
 	return replace_command(name,realFunc)
 end
 
+function setCloudTinting()
+  if simDR_sun_pitch>8 then
+    cldDR_sun_tint_red_dataref = simDR_sun_tint_red_dataref
+    cldDR_sun_tint_green_dataref =simDR_sun_tint_green_dataref*simDR_sun_tint_red_dataref/0.75
+    cldDR_sun_tint_blue_dataref =simDR_sun_tint_blue_dataref*simDR_sun_tint_red_dataref/0.75
+  else
+    cldDR_sun_tint_red_dataref = simDR_sun_tint_red_dataref
+    cldDR_sun_tint_green_dataref =simDR_sun_tint_green_dataref
+    cldDR_sun_tint_blue_dataref =simDR_sun_tint_blue_dataref
+  end
+end
 function animate_value(current_value, target, min, max, speed)
 
     local fps_factor = math.min(0.001, speed * SIM_PERIOD)
@@ -198,7 +215,7 @@ function after_physics()
     last_r=r_ref
     
   end
-
+  setCloudTinting()
 
   
   local diff=simDRTime-lastUpdate

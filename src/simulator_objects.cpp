@@ -243,9 +243,9 @@ namespace simulator_objects
 
 
 		sun_gain_dataref = export_float_dataref("enhanced_cloudscapes/sun_gain", 3.25f);
-		ambient_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
-		ambient_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
-		ambient_tint_blue_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_b");
+		ambient_tint_red_dataref = XPLMFindDataRef("enhanced_cloudscapes/outside_light_level_r");
+		ambient_tint_green_dataref = XPLMFindDataRef("enhanced_cloudscapes/outside_light_level_g");
+		ambient_tint_blue_dataref = XPLMFindDataRef("enhanced_cloudscapes/outside_light_level_b");
 
 		ambient_gain_dataref = export_float_dataref("enhanced_cloudscapes/ambient_gain", 0.8f);
 
