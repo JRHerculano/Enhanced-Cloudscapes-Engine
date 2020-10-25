@@ -3,8 +3,8 @@
 #define EARTH_RADIUS 6378100.0
 #define EARTH_CENTER vec3(0.0, -1.0 * EARTH_RADIUS, 0.0)
 
-#define SAMPLE_STEP_COUNT 16
-#define SUN_STEP_COUNT 6
+#define SAMPLE_STEP_COUNT 24
+#define SUN_STEP_COUNT 10
 
 #define MAXIMUM_SAMPLE_STEP_SIZE 100.0
 
@@ -226,7 +226,7 @@ float sun_ray_march(in float input_transmittance, in vec3 ray_position, in int c
 	if (cloud_types[cloud_layer_index] != 0 && cloud_coverages[cloud_layer_index] > 0)
 	{
 		float step_size = (cloud_tops[cloud_layer_index] - ray_position.y) / SUN_STEP_COUNT;
-
+		//made 0
 		vec3 current_ray_position = ray_position;
 
 		for (int step_index = 0; step_index < SUN_STEP_COUNT; step_index++)
@@ -354,21 +354,24 @@ vec4 render_clouds()
 	vec3 world_intersection = get_world_intersection();
 
 	float shadow_attenuation = 1.0;
-	int shadow_layer=0;
+	int shadow_layer=-1;
 	float maxCoverage=0.0;
 
 	//for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, cloud_layer_index).x * sun_direction), cloud_layer_index);
-	for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) 
+	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) 
 	{
 	  if(cloud_coverages[cloud_layer_index]>maxCoverage)
 	     maxCoverage=cloud_coverages[cloud_layer_index];
 	  if(cloud_bases[cloud_layer_index]<5000&&cloud_types[cloud_layer_index]>0)
 	    shadow_layer=cloud_layer_index;
 	}
-	if(maxCoverage>0.86)
+	if(shadow_layer<0)
 	  shadow_attenuation = 1.0;
 	else
-	  shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, 0).x * sun_direction), shadow_layer);
+	  shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction,shadow_layer).x * sun_direction), shadow_layer);
+	if(shadow_attenuation<1.0)
+		shadow_attenuation =shadow_attenuation*shadow_attenuation;
+	
 	for (int cloud_layer_index = first_higher_layer - 1; cloud_layer_index >= 0; cloud_layer_index--) output_color = sample_ray_march(output_color, cloud_layer_index);
 	for (int cloud_layer_index = first_higher_layer; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) output_color = sample_ray_march(output_color, cloud_layer_index);
 
