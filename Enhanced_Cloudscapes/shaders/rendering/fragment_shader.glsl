@@ -179,16 +179,30 @@ vec2 ray_layer_intersections(in vec3 ray_position, in vec3 ray_direction, int cl
 	}
 	else if (height_ratio == 1.0)
 	{
-		if (inner_sphere_intersections.x == 0.0)
+		/*if (inner_sphere_intersections.x == 0.0)
 		{
-			ray_start_distance = outer_sphere_intersections.x;
-			ray_march_distance = outer_sphere_intersections.y - outer_sphere_intersections.x;
+			ray_start_distance =  outer_sphere_intersections.x;
+			ray_march_distance =  outer_sphere_intersections.y - outer_sphere_intersections.x;
 		}
 		else
 		{
 			ray_start_distance = outer_sphere_intersections.x;
 			ray_march_distance = inner_sphere_intersections.x - outer_sphere_intersections.x;
+		}*/
+		if (inner_sphere_intersections.x == 0.0)
+		{
+			ray_start_distance =  outer_sphere_intersections.x;
+			ray_march_distance =  outer_sphere_intersections.y - outer_sphere_intersections.x;
 		}
+		else if (inner_sphere_intersections.x > outer_sphere_intersections.x){
+			ray_start_distance = outer_sphere_intersections.x;
+			ray_march_distance = inner_sphere_intersections.x - outer_sphere_intersections.x;
+		}
+		else{
+			ray_start_distance = inner_sphere_intersections.x;
+			ray_march_distance = outer_sphere_intersections.x - inner_sphere_intersections.x;
+		}
+
 	}
 
 	ray_start_distance = min(ray_start_distance, world_distance);
@@ -220,7 +234,7 @@ float sun_ray_march(in float input_transmittance, in vec3 ray_position, in int c
 			float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
 
 			output_transmittance *= exp(-1.0 * cloud_sample * step_size);
-			if (output_transmittance < 0.01) break;
+			if (output_transmittance < 0.3) break;
 
 			current_ray_position += sun_direction * step_size;
 		}
@@ -254,6 +268,10 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 			float step_min=1.0;
 			float local_blue_noise_scale=blue_noise_scale;
 			float local_bnoise=1.0;
+			float halt=0.0001;
+			if (cloud_types[cloud_layer_index] >= 4){
+				halt=0.1;
+			}
 			//while (current_ray_distance <= layer_intersections.y)
 			while (current_ray_distance <= layer_intersections.y)
 			{
@@ -309,8 +327,8 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 					output_color.xyz += sample_color * output_color.w;
 					output_color.w *= sample_transmittance;
 
-					if (output_color.w < 0.0001){ 
-					  output_color.w=0.0;
+					if (output_color.w < halt){ 
+					  output_color.w=halt;
 					  break;
 					}
 					else if(output_color.w < 0.1){ 
@@ -337,16 +355,20 @@ vec4 render_clouds()
 
 	float shadow_attenuation = 1.0;
 	int shadow_layer=0;
+	float maxCoverage=0.0;
+
 	//for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, cloud_layer_index).x * sun_direction), cloud_layer_index);
-	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index >=0; cloud_layer_index--) 
+	for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) 
 	{
-	  if(cloud_coverages[cloud_layer_index]>cloud_coverages[shadow_layer])
+	  if(cloud_coverages[cloud_layer_index]>maxCoverage)
+	     maxCoverage=cloud_coverages[cloud_layer_index];
+	  if(cloud_bases[cloud_layer_index]<5000&&cloud_types[cloud_layer_index]>0)
 	    shadow_layer=cloud_layer_index;
 	}
-	if(cloud_coverages[shadow_layer]>0.8)
-	  shadow_attenuation = 0.1;
+	if(maxCoverage>0.86)
+	  shadow_attenuation = 1.0;
 	else
-	  shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, shadow_layer).x * sun_direction), shadow_layer);
+	  shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, 0).x * sun_direction), shadow_layer);
 	for (int cloud_layer_index = first_higher_layer - 1; cloud_layer_index >= 0; cloud_layer_index--) output_color = sample_ray_march(output_color, cloud_layer_index);
 	for (int cloud_layer_index = first_higher_layer; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) output_color = sample_ray_march(output_color, cloud_layer_index);
 
