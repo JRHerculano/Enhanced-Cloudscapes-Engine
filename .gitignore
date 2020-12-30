@@ -2,3 +2,5 @@
 out/
 CMakeSettings.json
 SDK/
+x64/
+

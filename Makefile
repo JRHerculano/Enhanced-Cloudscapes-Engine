@@ -1,6 +1,6 @@
 
 OS ?= LINUX
-TARGET := Enhanced_Cloudscapes
+TARGET := Enhanced_Cloudscapes_Engine
 XPVER ?=11
 
 
@@ -15,7 +15,7 @@ else ifeq ($(XPVER), 10)
 BUILDDIR	:=	.
 endif
 SRC_BASE	:=	.
-ifeq ($(TARGET), Enhanced_Cloudscapes)
+ifeq ($(TARGET), Enhanced_Cloudscapes_Engine)
 SOURCES = \
 	src/dataref_helpers.cpp \
 	src/enhanced_cloudscapes.cpp \
