@@ -185,7 +185,7 @@ dofile("presetLoader.lua")
 
 function flight_start()
   setDrefs()
-  simDR_whiteout=1
+  simDR_whiteout=0
    simDR_fog=0.7
    simDR_dsf_min=100000
    --simDR_dsf_max=200000
