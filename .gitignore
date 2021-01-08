@@ -3,4 +3,5 @@ out/
 CMakeSettings.json
 SDK/
 x64/
-
+*/win.exp
+*/win.lib

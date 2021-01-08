@@ -147,7 +147,7 @@ namespace rendering_program
 	{
 		XPLMSetGraphicsState(0, 8, 0, 0, 0, 0, 0);
 		glViewport(0, 0, simulator_objects::current_rendering_resolution.x, simulator_objects::current_rendering_resolution.y);
-
+		//glDisable(GL_MULTISAMPLE);
 		GLint previous_framebuffer;
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previous_framebuffer);
 
@@ -250,5 +250,6 @@ namespace rendering_program
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previous_framebuffer);
 
 		glViewport(simulator_objects::current_viewport.x, simulator_objects::current_viewport.y, simulator_objects::current_viewport.z, simulator_objects::current_viewport.w);
+		//glEnable(GL_MULTISAMPLE);
 	}
 }

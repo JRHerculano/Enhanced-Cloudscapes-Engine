@@ -20,6 +20,7 @@ cldDR_cloud_base_datarefs2 = deferred_dataref("enhanced_cloudscapes/skip_fragmen
 cldDR_cloud_base_datarefs2 =0.0
 cldCMD_newWeather 				= deferred_command("enhanced_cloudscapes/newWeather", "EC new weather", cldCMD_newWeather_CMDhandler)
 
+
 --cloud_map_scale = deferred_dataref("enhanced_cloudscapes/cloud_map_scale","number")
 --deferred_dataref("enhanced_cloudscapes/base_noise_scale","number")
 --deferred_dataref("enhanced_cloudscapes/detail_noise_scale","number")

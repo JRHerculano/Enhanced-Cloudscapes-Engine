@@ -1,4 +1,5 @@
 local transitionTimeSecs=300
+local targetGPU_Time=0.016
 local cloudheightMod=2
 
 
@@ -39,6 +40,8 @@ simDR_dsf_min = find_dataref("sim/private/controls/skyc/min_dsf_vis_ever")
 simDR_dsf_max = find_dataref("sim/private/controls/skyc/max_dsf_vis_ever")
 simDRTime=find_dataref("sim/time/total_running_time_sec")
 simDR_VR=find_dataref("sim/graphics/VR/enabled")
+simDR_FFT = find_dataref("sim/private/controls/reno/draw_fft_water")
+
 
 l_ref=find_dataref("sim/flightmodel/position/lat_ref")
 r_ref=find_dataref("sim/flightmodel/position/lon_ref")
@@ -161,6 +164,7 @@ function newWeather()
   end
   cldI_sun_gain=cldDR_sun_gain
   lastUpdate=simDRTime
+  cldDR_cloud_resolution_ratio=1.0
   print("New Weather")
 end
 function cldCMD_newWeather_CMDhandler(phase, duration)
@@ -186,6 +190,7 @@ dofile("presetLoader.lua")
 function flight_start()
   setDrefs()
   simDR_whiteout=0
+ 
    simDR_fog=0.7
    simDR_dsf_min=100000
    --simDR_dsf_max=200000
@@ -216,27 +221,35 @@ function refreshSIMDRs()
   
 end
 
+function set_cloud_resolution_ratio()
+  if simDR_gpu_time<targetGPU_Time then return end --just leave 0.9 alone
+  if cldDR_cloud_resolution_ratio<=0.3 then return end --nothing more we can do for this... :(
+    
+  cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,0.3,0.3,1.0,10)
+  
+end
 function after_physics()
   --return
-  if last_l~=l_ref or last_r~=r_ref then
+  --[[if last_l~=l_ref or last_r~=r_ref then
     print("teleport " .. " " .. last_l .. " " .. last_r.. " " .. l_ref .. " " .. r_ref)
     last_l=l_ref
     last_r=r_ref
     
-  end
+  end]]
   setCloudTinting()
 
   
   local diff=simDRTime-lastUpdate
   if diff>transitionTimeSecs or isNewWeather()==true then newWeather() end
-  
-  if simDR_gpu_time>0.025 then
+  set_cloud_resolution_ratio()
+
+  --[[if simDR_gpu_time>0.025 then
     cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,0.5,0.5,1.0,0.5)
   elseif simDR_gpu_time<0.010 and cldDR_cloud_resolution_ratio<1.0 then
     cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,1.0,0.95,1.0,0.5)
   elseif simDR_gpu_time<0.020 and cldDR_cloud_resolution_ratio<1.0 then
     cldDR_cloud_resolution_ratio=animate_value(cldDR_cloud_resolution_ratio,1.0,0.5,1.0,0.5)
-  end
+  end]]
   
   local targetSungain=2.25
 
