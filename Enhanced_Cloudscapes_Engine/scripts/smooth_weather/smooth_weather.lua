@@ -2,7 +2,18 @@ local transitionTimeSecs=300
 local targetGPU_Time=0.016
 local cloudheightMod=2
 
-
+simDR_view_y = find_dataref("sim/graphics/view/view_y")
+waterDR_amp1 = find_dataref("sim/private/controls/water/fft_amp1")
+waterDR_amp2 = find_dataref("sim/private/controls/water/fft_amp2")
+waterDR_amp3 = find_dataref("sim/private/controls/water/fft_amp3")
+waterDR_amp4 = find_dataref("sim/private/controls/water/fft_amp4")
+waterDR_scale1 = find_dataref("sim/private/controls/water/fft_scale1")
+waterDR_scale2 = find_dataref("sim/private/controls/water/fft_scale2")
+waterDR_scale3 = find_dataref("sim/private/controls/water/fft_scale3")
+waterDR_scale4 = find_dataref("sim/private/controls/water/fft_scale4")
+waterDR_noise_speed = find_dataref("sim/private/controls/water/noise_speed")
+waterDR_noise_bias_gen_x = find_dataref("sim/private/controls/water/noise_bias_gen_x")
+waterDR_noise_bias_gen_y = find_dataref("sim/private/controls/water/noise_bias_gen_y")
 
 cldDR_cloud_base_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_base_msl_m")
 cldDR_cloud_type_datarefs = find_dataref("enhanced_cloudscapes/weather/cloud_type")
@@ -212,6 +223,18 @@ function flight_start()
   lastUpdate=simDRTime+transitionTimeSecs-5
   cldDR_sun_gain=cldT_sun_gain
   cldI_sun_gain=cldDR_sun_gain
+  waterDR_amp1 = 2.5
+  waterDR_amp2 = 1.5
+  waterDR_amp3 = 16
+  waterDR_amp4 = 150
+  waterDR_scale1 = 4
+  waterDR_scale2 = 60
+  waterDR_scale3 = 6
+  waterDR_scale4 =  2
+  waterDR_noise_speed = 25
+  waterDR_noise_bias_gen_x = 2
+  waterDR_noise_bias_gen_y = 1
+
   after_physics()
   newWeather()
 end
@@ -219,6 +242,16 @@ end
 
 function refreshSIMDRs()
   
+end
+
+function setWater()
+  if simDR_view_y > 6000.0 then
+    waterDR_scale3 = 3
+    waterDR_scale4 =  1.5
+  else
+    waterDR_scale3 = 6
+    waterDR_scale4 =  2
+  end
 end
 
 function set_cloud_resolution_ratio()
@@ -237,7 +270,7 @@ function after_physics()
     
   end]]
   setCloudTinting()
-
+  setWater()
   
   local diff=simDRTime-lastUpdate
   if diff>transitionTimeSecs or isNewWeather()==true then newWeather() end
